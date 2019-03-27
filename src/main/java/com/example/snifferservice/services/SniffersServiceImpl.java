@@ -4,6 +4,7 @@ package com.example.snifferservice.services;
 import com.example.snifferservice.entities.Configuration;
 import com.example.snifferservice.entities.Room;
 import com.example.snifferservice.entities.Sniffer;
+import com.example.snifferservice.entities.User;
 import com.example.snifferservice.repositories.RoomsRepository;
 import com.example.snifferservice.repositories.SniffersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,11 +101,7 @@ public class SniffersServiceImpl implements SniffersService {
             }
             password = sb.toString().substring(0, 12);
             System.out.println("Password for " + u.getUsername() + ": " + password);
-            u.setPassword(passwordEncoder.encode(password));
-            List<String> roles = new ArrayList<>();
-            roles.add("SNIFFER");
-            u.setRoles(roles);
-            usersRepository.save(u);
+
             response.setStatus(200);
         }
         else{
