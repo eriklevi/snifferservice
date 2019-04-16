@@ -1,4 +1,4 @@
-package com.example.snifferservice;
+package com.example.snifferservice.utils;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;

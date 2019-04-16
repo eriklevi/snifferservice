@@ -1,51 +1,60 @@
 package com.example.snifferservice.services;
 
 
+import com.example.snifferservice.utils.CustomRestTemplate;
 import com.example.snifferservice.entities.Configuration;
 import com.example.snifferservice.entities.Room;
 import com.example.snifferservice.entities.Sniffer;
 import com.example.snifferservice.entities.User;
 import com.example.snifferservice.repositories.RoomsRepository;
 import com.example.snifferservice.repositories.SniffersRepository;
+import com.example.snifferservice.utils.UserContextFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class SniffersServiceImpl implements SniffersService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserContextFilter.class);
+
     private final SniffersRepository sniffersRepository;
     private final RoomsRepository roomsRepository;
-    private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CustomRestTemplate restTemplate;
 
     @Autowired
-    public SniffersServiceImpl(SniffersRepository sniffersRepository, RoomsRepository roomsRepository, UsersRepository usersRepository, PasswordEncoder passwordEncoder) {
+    public SniffersServiceImpl(SniffersRepository sniffersRepository, RoomsRepository roomsRepository, PasswordEncoder passwordEncoder, CustomRestTemplate restTemplate) {
         this.sniffersRepository = sniffersRepository;
         this.roomsRepository = roomsRepository;
-        this.usersRepository = usersRepository;
         this.passwordEncoder = passwordEncoder;
+        this.restTemplate = restTemplate;
     }
 
     @Override
     public void addSniffer(Sniffer sniffer, HttpServletResponse response) {
         if(!sniffersRepository.existsByMac(sniffer.getMac())) {
 
-            List<Sniffer> list = getSniffersByRoom(sniffer.getRoom());
+            List<Sniffer> list = getSniffersByRoom(sniffer.getRoomId());
             /*
             we need o check if there is already a sniffer with the same name inside the room
              */
             if (list == null) {
                 //we dont have any sniffer in the given room so we proceed to add it
-                Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoom());
+                Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoomId());
                 try {
                     addProcedure(sniffer, response, optionalRoom);
                 }
@@ -60,12 +69,12 @@ public class SniffersServiceImpl implements SniffersService {
                     //we have already a sniffer with the given name inside the room
                     response.setStatus(400);
                 } else {
-                    Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoom());
+                    Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoomId());
                     try {
                         addProcedure(sniffer, response, optionalRoom);
                     }
                     catch(Exception e){
-                        System.out.println(e.getMessage());
+                        logger.error(e.getMessage());
                         response.setStatus(400);
                     }
                 }
@@ -82,17 +91,14 @@ public class SniffersServiceImpl implements SniffersService {
             Sniffer newSniffer = new Sniffer();
             newSniffer.setMac(sniffer.getMac());
             newSniffer.setName(sniffer.getName());
-            newSniffer.setBuilding(sniffer.getBuilding());
-            newSniffer.setRoom(sniffer.getRoom());
+            newSniffer.setBuildingId(sniffer.getBuildingId());
+            newSniffer.setRoomId(sniffer.getRoomId());
             newSniffer.setMacID(sniffer.getMac().replace(":", ""));
             newSniffer.setLocation(sniffer.getLocation());
             newSniffer.setConfiguration(sniffer.getConfiguration());
-            Sniffer sniffer1 = sniffersRepository.insert(newSniffer);
-            room.addsniffer(sniffer1.getId());//we use sniffer1 to be shure to get the sniffer id
-            roomsRepository.save(room);
             User u = new User();
             u.setUsername(sniffer.getMac().replace(":", ""));
-            String password = sniffer1.getMac().replace(":", "") + "secret12345";
+            String password = newSniffer.getMac().replace(":", "") + "secret12345";
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hashInBytes = md.digest(password.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
@@ -100,21 +106,33 @@ public class SniffersServiceImpl implements SniffersService {
                 sb.append(String.format("%02x", b));
             }
             password = sb.toString().substring(0, 12);
-            System.out.println("Password for " + u.getUsername() + ": " + password);
-
-            response.setStatus(200);
+            u.setPassword(password);
+            logger.debug("Password for " + u.getUsername() + ": " + password);
+            RestTemplate template = restTemplate.getCustomRestTemplate();
+            HttpEntity<User> request = new HttpEntity<>(u);
+            ResponseEntity<User> responseEntity = template.exchange("http://localhost:5555/usersapi/restricted/sniffers", HttpMethod.POST, request, User.class);
+            if(responseEntity.getStatusCodeValue() == 200){
+                logger.info("Completed request for sniffer "+newSniffer.getMac()+ " successfully!");
+                response.setStatus(200);
+                Sniffer sniffer1 = sniffersRepository.insert(newSniffer);
+                room.addsniffer(sniffer1.getId());//we use sniffer1 to be shure to get the sniffer id
+                roomsRepository.save(room);
+            } else{
+                logger.error("Completed request for sniffer "+newSniffer.getMac() + " unsiccessfully!");
+                response.setStatus(400);
+            }
         }
         else{
+            logger.error("addProcedure, Room is not present!");
             response.setStatus(400);
         }
     }
 
     @Override
-    //TODO cancellare a cascata anche l'utente correlato
     public void deleteSnifferById(String id, HttpServletResponse response) {
         if(sniffersRepository.existsById(id)){
             sniffersRepository.deleteById(id);
-            System.out.println("Cancellato sniffer: "+id);
+            logger.info("Cancellato sniffer: "+id);
             response.setStatus(200);
         }
         else{
@@ -153,7 +171,7 @@ public class SniffersServiceImpl implements SniffersService {
 
     @Override
     public List<Sniffer> getSniffersByRoom(String room, HttpServletResponse response) {
-        List<Sniffer> sniffers = sniffersRepository.findByRoom(room);
+        List<Sniffer> sniffers = sniffersRepository.findByRoomId(room);
         if(sniffers != null)
             response.setStatus(200);
         else
@@ -163,7 +181,7 @@ public class SniffersServiceImpl implements SniffersService {
 
     @Override
     public List<Sniffer> getSniffersByBuilding(String building, HttpServletResponse response) {
-        List<Sniffer> sniffers = sniffersRepository.findByRoom(building);
+        List<Sniffer> sniffers = sniffersRepository.findByRoomId(building);
         if(sniffers != null)
             response.setStatus(200);
         else
@@ -192,6 +210,6 @@ public class SniffersServiceImpl implements SniffersService {
 
     @Override
     public List<Sniffer> getSniffersByRoom(String room) {
-        return sniffersRepository.findByRoom(room);
+        return sniffersRepository.findByRoomId(room);
     }
 }

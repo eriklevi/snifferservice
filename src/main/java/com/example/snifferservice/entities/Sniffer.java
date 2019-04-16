@@ -20,9 +20,13 @@ public class Sniffer {
     @NotEmpty(message = "Name should not be empty")
     private String name;
     @NotEmpty(message = "Building should not be empty")
-    private String building;
+    private String buildingId;
     @NotEmpty(message = "Room should not be empty")
-    private String room;
+    private String roomId;
+    @NotEmpty(message = "Building should not be empty")
+    private String buildingName;
+    @NotEmpty(message = "Room should not be empty")
+    private String roomName;
     private GeoJsonPoint location;
     private String status;
     @NotNull
@@ -54,20 +58,20 @@ public class Sniffer {
         this.name = name;
     }
 
-    public String getBuilding() {
-        return building;
+    public String getBuildingId() {
+        return buildingId;
     }
 
-    public void setBuilding(String building) {
-        this.building = building;
+    public void setBuildingId(String buildingId) {
+        this.buildingId = buildingId;
     }
 
-    public String getRoom() {
-        return room;
+    public String getRoomId() {
+        return roomId;
     }
 
-    public void setRoom(String room) {
-        this.room = room;
+    public void setRoomId(String roomId) {
+        this.roomId = roomId;
     }
 
     public GeoJsonPoint getLocation() {
@@ -100,5 +104,21 @@ public class Sniffer {
 
     public void setMacID(String macID) {
         this.macID = macID;
+    }
+
+    public String getBuildingName() {
+        return buildingName;
+    }
+
+    public void setBuildingName(String buildingName) {
+        this.buildingName = buildingName;
+    }
+
+    public String getRoomName() {
+        return roomName;
+    }
+
+    public void setRoomName(String roomName) {
+        this.roomName = roomName;
     }
 }

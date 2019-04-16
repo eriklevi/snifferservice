@@ -10,7 +10,6 @@ import java.util.Optional;
 @Repository
 public interface SniffersRepository extends MongoRepository<Sniffer,String> {
     Boolean existsByMac(String mac);
-    List<Sniffer> findByBuilding(String building);
-    List<Sniffer> findByRoom(String room);
+    List<Sniffer> findByRoomId(String room);
     Optional<Sniffer> findByMacID(String macID);
 }
