@@ -2,7 +2,6 @@ package com.example.snifferservice.controllers;
 
 import com.example.snifferservice.entities.Room;
 import com.example.snifferservice.services.RoomsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +15,11 @@ import java.util.List;
 @RequestMapping("/rooms")
 public class RoomsController {
 
-    @Autowired
-    private RoomsService roomsService;
+    private final RoomsService roomsService;
+
+    public RoomsController(RoomsService roomsService) {
+        this.roomsService = roomsService;
+    }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.GET)

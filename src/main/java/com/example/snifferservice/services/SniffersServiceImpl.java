@@ -110,7 +110,7 @@ public class SniffersServiceImpl implements SniffersService {
             logger.debug("Password for " + u.getUsername() + ": " + password);
             RestTemplate template = restTemplate.getCustomRestTemplate();
             HttpEntity<User> request = new HttpEntity<>(u);
-            ResponseEntity<User> responseEntity = template.exchange("http://localhost:5555/usersapi/restricted/sniffers", HttpMethod.POST, request, User.class);
+            ResponseEntity<User> responseEntity = template.exchange("http://zuul:5555/usersapi/restricted/sniffers", HttpMethod.POST, request, User.class);
             if(responseEntity.getStatusCodeValue() == 200){
                 logger.info("Completed request for sniffer "+newSniffer.getMac()+ " successfully!");
                 response.setStatus(200);
