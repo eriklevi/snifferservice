@@ -95,6 +95,8 @@ public class SniffersServiceImpl implements SniffersService {
             newSniffer.setRoomId(sniffer.getRoomId());
             newSniffer.setMacID(sniffer.getMac().replace(":", ""));
             newSniffer.setLocation(sniffer.getLocation());
+            newSniffer.setBuildingName(sniffer.getBuildingName());
+            newSniffer.setRoomName(sniffer.getRoomName());
             newSniffer.setConfiguration(sniffer.getConfiguration());
             User u = new User();
             u.setUsername(sniffer.getMac().replace(":", ""));
