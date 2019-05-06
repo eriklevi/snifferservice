@@ -98,6 +98,7 @@ public class SniffersServiceImpl implements SniffersService {
             newSniffer.setBuildingName(sniffer.getBuildingName());
             newSniffer.setRoomName(sniffer.getRoomName());
             newSniffer.setConfiguration(sniffer.getConfiguration());
+            logger.info(newSniffer.toString());
             User u = new User();
             u.setUsername(sniffer.getMac().replace(":", ""));
             String password = newSniffer.getMac().replace(":", "") + "secret12345";

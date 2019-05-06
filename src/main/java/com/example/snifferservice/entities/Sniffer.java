@@ -121,4 +121,9 @@ public class Sniffer {
     public void setRoomName(String roomName) {
         this.roomName = roomName;
     }
+
+    @Override
+    public String toString() {
+        return this.name+" "+ this.buildingName+" "+ this.roomName;
+    }
 }
