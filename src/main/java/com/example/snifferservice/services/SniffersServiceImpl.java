@@ -1,11 +1,8 @@
 package com.example.snifferservice.services;
 
 
+import com.example.snifferservice.entities.*;
 import com.example.snifferservice.utils.CustomRestTemplate;
-import com.example.snifferservice.entities.Configuration;
-import com.example.snifferservice.entities.Room;
-import com.example.snifferservice.entities.Sniffer;
-import com.example.snifferservice.entities.User;
 import com.example.snifferservice.repositories.RoomsRepository;
 import com.example.snifferservice.repositories.SniffersRepository;
 import com.example.snifferservice.utils.UserContextFilter;
@@ -25,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class SniffersServiceImpl implements SniffersService {
@@ -209,6 +207,21 @@ public class SniffersServiceImpl implements SniffersService {
             response.setStatus(400);
             return null;
         }
+    }
+
+    @Override
+    public List<SnifferLocation> getSniffersLocation(String mac, HttpServletResponse response) {
+        List<Sniffer> sniffers = sniffersRepository.findAll();
+        return sniffers.stream()
+                .map(sniffer -> {
+                   SnifferLocation snifferLocation = new SnifferLocation(
+                            sniffer.getMac()
+                            , sniffer.getName()
+                            , sniffer.getBuildingName()
+                            , sniffer.getRoomName());
+                   return snifferLocation;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override

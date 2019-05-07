@@ -2,6 +2,7 @@ package com.example.snifferservice.services;
 
 import com.example.snifferservice.entities.Configuration;
 import com.example.snifferservice.entities.Sniffer;
+import com.example.snifferservice.entities.SnifferLocation;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -16,4 +17,5 @@ public interface SniffersService {
     List<Sniffer> getSniffersByBuilding(String building, HttpServletResponse response);
     List<Sniffer> getSniffers(HttpServletResponse response);
     Configuration getSnifferConfigurationByMacId(String macid, HttpServletResponse response);
+    List<SnifferLocation> getSniffersLocation(String mac, HttpServletResponse response);
 }

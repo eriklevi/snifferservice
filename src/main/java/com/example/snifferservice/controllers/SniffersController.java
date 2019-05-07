@@ -3,6 +3,7 @@ package com.example.snifferservice.controllers;
 
 import com.example.snifferservice.entities.Configuration;
 import com.example.snifferservice.entities.Sniffer;
+import com.example.snifferservice.entities.SnifferLocation;
 import com.example.snifferservice.services.SniffersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,11 @@ public class SniffersController {
         this.sniffersService = sniffersService;
     }
 
+
+    @RequestMapping(value = "/locations", method = RequestMethod.GET)
+    public List<SnifferLocation> getSniffersLocation(String mac, HttpServletResponse response){
+        return sniffersService.getSniffersLocation(mac, response);
+    }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)

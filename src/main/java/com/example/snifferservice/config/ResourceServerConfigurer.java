@@ -11,8 +11,8 @@ public class ResourceServerConfigurer extends ResourceServerConfigurerAdapter {
     public void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .anyRequest()
-                .fullyAuthenticated();
+                .antMatchers("/sniffers/locations").permitAll()
+                .anyRequest().fullyAuthenticated();
     }
 }
 
