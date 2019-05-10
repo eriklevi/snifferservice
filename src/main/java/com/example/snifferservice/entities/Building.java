@@ -15,6 +15,7 @@ public class Building {
     @NotEmpty
     private String name;
     private List<String> rooms;
+    private List<String> roomsNames;
 
     public String getId() {
         return id;
@@ -36,6 +37,8 @@ public class Building {
         return rooms;
     }
 
+    public List<String> getRoomsNames(){return this.roomsNames;}
+
     public void setRooms(List<String> rooms) {
         this.rooms = rooms;
     }
@@ -56,5 +59,14 @@ public class Building {
         }
         else
             this.rooms.add(id);
+    }
+
+    public void addRoomName(String name) {
+        if(this.roomsNames== null){
+            this.roomsNames = new ArrayList<>();
+            this.roomsNames.add(name);
+        }
+        else
+            this.roomsNames.add(name);
     }
 }

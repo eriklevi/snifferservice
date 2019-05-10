@@ -2,7 +2,6 @@ package com.example.snifferservice.services;
 
 
 import com.example.snifferservice.entities.*;
-import com.example.snifferservice.utils.CustomRestTemplate;
 import com.example.snifferservice.repositories.RoomsRepository;
 import com.example.snifferservice.repositories.SniffersRepository;
 import com.example.snifferservice.utils.UserContextFilter;
@@ -32,14 +31,15 @@ public class SniffersServiceImpl implements SniffersService {
     private final SniffersRepository sniffersRepository;
     private final RoomsRepository roomsRepository;
     private final PasswordEncoder passwordEncoder;
-    private final CustomRestTemplate restTemplate;
 
     @Autowired
-    public SniffersServiceImpl(SniffersRepository sniffersRepository, RoomsRepository roomsRepository, PasswordEncoder passwordEncoder, CustomRestTemplate restTemplate) {
+    private RestTemplate lbRestTemplate;
+
+    @Autowired
+    public SniffersServiceImpl(SniffersRepository sniffersRepository, RoomsRepository roomsRepository, PasswordEncoder passwordEncoder) {
         this.sniffersRepository = sniffersRepository;
         this.roomsRepository = roomsRepository;
         this.passwordEncoder = passwordEncoder;
-        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -109,9 +109,9 @@ public class SniffersServiceImpl implements SniffersService {
             password = sb.toString().substring(0, 12);
             u.setPassword(password);
             logger.debug("Password for " + u.getUsername() + ": " + password);
-            RestTemplate template = restTemplate.getCustomRestTemplate();
+            //RestTemplate template = restTemplate.getCustomRestTemplate();
             HttpEntity<User> request = new HttpEntity<>(u);
-            ResponseEntity<User> responseEntity = template.exchange("http://zuul:5555/usersapi/restricted/sniffers", HttpMethod.POST, request, User.class);
+            ResponseEntity<User> responseEntity = lbRestTemplate.exchange("http://userservice/restricted/sniffers", HttpMethod.POST, request, User.class);
             if(responseEntity.getStatusCodeValue() == 200){
                 logger.info("Completed request for sniffer "+newSniffer.getMac()+ " successfully!");
                 response.setStatus(200);

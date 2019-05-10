@@ -84,12 +84,13 @@ public class BuildingServiceImpl implements BuildingService {
         if(optionalBuilding.isPresent()){
             Building b = optionalBuilding.get();
             if(b.getRooms() != null){
-                if(!b.getRooms().contains(room.getName())){
+                if(!b.getRoomsNames().contains(room.getName())){
                     //stiamo aggiungendo una nuova stanza ad un building quindi
                     //creiamo una nuova entry nel db
                     //accettiamo stanze con stesso nome ma in building diversi
                     Room savedRoom = roomsRepository.save(room);
                     b.addRoom(savedRoom.getId());
+                    b.addRoomName(savedRoom.getName());
                     buildingsRepository.save(b);
                     response.setStatus(200);
                 }
@@ -101,6 +102,7 @@ public class BuildingServiceImpl implements BuildingService {
                 //non sono ancora presenti rooms
                 Room savedRoom = roomsRepository.save(room);
                 b.addRoom(savedRoom.getId());
+                b.addRoomName(savedRoom.getName());
                 buildingsRepository.save(b);
                 response.setStatus(200);
             }
