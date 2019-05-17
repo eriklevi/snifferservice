@@ -215,10 +215,13 @@ public class SniffersServiceImpl implements SniffersService {
         return sniffers.stream()
                 .map(sniffer -> {
                    SnifferLocation snifferLocation = new SnifferLocation(
-                            sniffer.getMac()
-                            , sniffer.getName()
-                            , sniffer.getBuildingName()
-                            , sniffer.getRoomName());
+                           sniffer.getId(),
+                           sniffer.getMac(),
+                           sniffer.getName(),
+                           sniffer.getBuildingName(),
+                           sniffer.getBuildingId(),
+                           sniffer.getRoomName(),
+                           sniffer.getRoomId());
                    return snifferLocation;
                 })
                 .collect(Collectors.toList());
