@@ -44,8 +44,42 @@ public class SniffersServiceImpl implements SniffersService {
 
     @Override
     public void addSniffer(Sniffer sniffer, HttpServletResponse response) {
-        if(!sniffersRepository.existsByMac(sniffer.getMac())) {
-
+        if(sniffer.getMac() != null) {
+            if (!sniffersRepository.existsByMac(sniffer.getMac())) {
+                List<Sniffer> list = getSniffersByRoom(sniffer.getRoomId());
+            /*
+            we need o check if there is already a sniffer with the same name inside the room
+             */
+                if (list == null) {
+                    //we dont have any sniffer in the given room so we proceed to add it
+                    Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoomId());
+                    try {
+                        addProcedure(sniffer, response, optionalRoom);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                        response.setStatus(400);
+                    }
+                } else {
+                    if (list.stream()
+                            .map(Sniffer::getName)
+                            .anyMatch(str -> str.equals(sniffer.getName()))) {
+                        //we have already a sniffer with the given name inside the room
+                        response.setStatus(400);
+                    } else {
+                        Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoomId());
+                        try {
+                            addProcedure(sniffer, response, optionalRoom);
+                        } catch (Exception e) {
+                            logger.error(e.getMessage());
+                            response.setStatus(400);
+                        }
+                    }
+                }
+            } else {
+                response.setStatus(400);
+            }
+        }
+        else{
             List<Sniffer> list = getSniffersByRoom(sniffer.getRoomId());
             /*
             we need o check if there is already a sniffer with the same name inside the room
@@ -54,9 +88,8 @@ public class SniffersServiceImpl implements SniffersService {
                 //we dont have any sniffer in the given room so we proceed to add it
                 Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoomId());
                 try {
-                    addProcedure(sniffer, response, optionalRoom);
-                }
-                catch(Exception e){
+                    addProcedureWithoutMac(sniffer, response, optionalRoom);
+                } catch (Exception e) {
                     System.out.println(e.getMessage());
                     response.setStatus(400);
                 }
@@ -69,17 +102,13 @@ public class SniffersServiceImpl implements SniffersService {
                 } else {
                     Optional<Room> optionalRoom = roomsRepository.findById(sniffer.getRoomId());
                     try {
-                        addProcedure(sniffer, response, optionalRoom);
-                    }
-                    catch(Exception e){
+                        addProcedureWithoutMac(sniffer, response, optionalRoom);
+                    } catch (Exception e) {
                         logger.error(e.getMessage());
                         response.setStatus(400);
                     }
                 }
             }
-        }
-        else{
-            response.setStatus(400);
         }
     }
 
@@ -129,28 +158,63 @@ public class SniffersServiceImpl implements SniffersService {
         }
     }
 
-    @Override
-    public void deleteSnifferById(String id, HttpServletResponse response) {
-        if(sniffersRepository.existsById(id)){
-            sniffersRepository.deleteById(id);
-            logger.info("Cancellato sniffer: "+id);
-            response.setStatus(200);
+    private void addProcedureWithoutMac(Sniffer sniffer, HttpServletResponse response, Optional<Room> optionalRoom) throws NoSuchAlgorithmException {
+        if (optionalRoom.isPresent()) {
+            Room room = optionalRoom.get();
+            Sniffer newSniffer = new Sniffer();
+            newSniffer.setName(sniffer.getName());
+            newSniffer.setBuildingId(sniffer.getBuildingId());
+            newSniffer.setRoomId(sniffer.getRoomId());
+            newSniffer.setMacID(sniffer.getMac().replace(":", ""));
+            newSniffer.setLocation(sniffer.getLocation());
+            newSniffer.setBuildingName(sniffer.getBuildingName());
+            newSniffer.setRoomName(sniffer.getRoomName());
+            newSniffer.setConfiguration(sniffer.getConfiguration());
+            logger.info(newSniffer.toString());
+            Sniffer sniffer1 = sniffersRepository.insert(newSniffer);
+            room.addsniffer(sniffer1.getId());//we use sniffer1 to be shure to get the sniffer id
+            roomsRepository.save(room);
         }
         else{
+            logger.error("addProcedure, Room is not present!");
             response.setStatus(400);
         }
     }
 
     @Override
-    //TODO controllare quali sono i campi che possono essere effettvamente modificati tipo mac address no o id
+    public void disassociateSnifferById(String id, HttpServletResponse response) {
+        Optional<Sniffer> optionalSniffer = sniffersRepository.findById(id);
+        if(optionalSniffer.isPresent()){
+            Sniffer s = optionalSniffer.get();
+            s.setMac(null);
+            s.setMacID(null);
+            sniffersRepository.save(s);
+            response.setStatus(200);
+        } else {
+            response.setStatus(400);
+        }
+    }
+
+    @Override
     public void updateSnifferById(String id, Sniffer sniffer, HttpServletResponse response) {
         Optional<Sniffer> optionalSniffer = sniffersRepository.findById(id);
         if(optionalSniffer.isPresent()
                 && sniffer.getId().equals(id) //we have to check correspondence
 
         ){
-            sniffersRepository.save(sniffer);
-            response.setStatus(200);
+            Sniffer s = optionalSniffer.get();
+            s.setMac(sniffer.getMac());
+            s.setMacID(sniffer.getMac().replace(":", ""));
+            s.setName(sniffer.getName());
+            s.setConfiguration(sniffer.getConfiguration());
+            if(sniffersRepository.existsByMac(s.getMac())){
+                //we would have 2 sniffers with same mac, Error
+                response.setStatus(400);
+                return;
+            } else{
+                sniffersRepository.save(s);
+                response.setStatus(200);
+            }
         }
         else{
             response.setStatus(400);
@@ -210,19 +274,19 @@ public class SniffersServiceImpl implements SniffersService {
     }
 
     @Override
-    public List<SnifferLocation> getSniffersLocation(String mac, HttpServletResponse response) {
+    public List<SnifferLocation> getSniffersLocation(HttpServletResponse response) {
         List<Sniffer> sniffers = sniffersRepository.findAll();
         return sniffers.stream()
-                .map(sniffer -> {
-                   SnifferLocation snifferLocation = new SnifferLocation(
-                           sniffer.getId(),
-                           sniffer.getMac(),
-                           sniffer.getName(),
-                           sniffer.getBuildingName(),
-                           sniffer.getBuildingId(),
-                           sniffer.getRoomName(),
-                           sniffer.getRoomId());
-                   return snifferLocation;
+                .filter(s -> s.getMac() != null)
+                .map(s -> {
+                    return new SnifferLocation(
+                            s.getId(),
+                            s.getMac(),
+                            s.getName(),
+                            s.getBuildingName(),
+                            s.getBuildingId(),
+                            s.getRoomName(),
+                            s.getRoomId());
                 })
                 .collect(Collectors.toList());
     }

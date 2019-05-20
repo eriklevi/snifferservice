@@ -13,7 +13,6 @@ public class Sniffer {
 
     @Id
     private String id;
-    @NotEmpty(message = "MAC should not be empty")
     @Pattern(regexp = "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$")
     private String mac;
     private String macID;

@@ -36,8 +36,8 @@ public class SniffersController {
 
 
     @RequestMapping(value = "/locations", method = RequestMethod.GET)
-    public List<SnifferLocation> getSniffersLocation(String mac, HttpServletResponse response){
-        return sniffersService.getSniffersLocation(mac, response);
+    public List<SnifferLocation> getSniffersLocation(HttpServletResponse response){
+        return sniffersService.getSniffersLocation(response);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -63,9 +63,9 @@ public class SniffersController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public void removeSnifferById(@PathVariable @NotEmpty String id, HttpServletResponse response){
-        sniffersService.deleteSnifferById(id, response);
+    @RequestMapping(value = "/{id}/disassociate", method = RequestMethod.GET)
+    public void disassociateSnifferById(@PathVariable @NotEmpty String id, HttpServletResponse response){
+        sniffersService.disassociateSnifferById(id, response);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
