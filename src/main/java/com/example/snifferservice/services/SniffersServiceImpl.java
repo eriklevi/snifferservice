@@ -188,6 +188,7 @@ public class SniffersServiceImpl implements SniffersService {
             Sniffer s = optionalSniffer.get();
             s.setMac(null);
             s.setMacID(null);
+            s.setStatus("Disassociated");
             sniffersRepository.save(s);
             response.setStatus(200);
         } else {
@@ -202,19 +203,33 @@ public class SniffersServiceImpl implements SniffersService {
                 && sniffer.getId().equals(id) //we have to check correspondence
 
         ){
+            //initials check to find if the inserted data are ok
             Sniffer s = optionalSniffer.get();
-            s.setMac(sniffer.getMac());
-            s.setMacID(sniffer.getMac().replace(":", ""));
-            s.setName(sniffer.getName());
-            s.setConfiguration(sniffer.getConfiguration());
-            if(sniffersRepository.existsByMac(s.getMac())){
+            //check if there is correspondence between request id and provided sniffer id
+            if(!s.getMac().equals(sniffer.getMac()) && sniffersRepository.existsByMac(sniffer.getMac())) {
                 //we would have 2 sniffers with same mac, Error
                 response.setStatus(400);
                 return;
-            } else{
-                sniffersRepository.save(s);
-                response.setStatus(200);
             }
+            if(!s.getName().equals(sniffer.getName())){
+                List<Sniffer> list = getSniffersByRoom(sniffer.getRoomId());
+                if(list != null){
+                    if (list.stream()
+                            .map(Sniffer::getName)
+                            .anyMatch(str -> str.equals(sniffer.getName()))) {
+                        //we have already a sniffer with the given name inside the room
+                        response.setStatus(400);
+                        return;
+                    }
+                }
+            }
+            s.setMac(sniffer.getMac());
+            s.setMacID(sniffer.getMacID());
+            s.setName(sniffer.getName());
+            s.setConfiguration(sniffer.getConfiguration());
+            s.setStatus(null);
+            sniffersRepository.save(s);
+            response.setStatus(200);
         }
         else{
             response.setStatus(400);
